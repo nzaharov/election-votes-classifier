@@ -3,17 +3,17 @@ use std::collections::HashMap;
 use std::io;
 
 type Record = HashMap<String, String>;
-type Stats = HashMap<String, HashMap<String, i32>>;
+type Stats = HashMap<String, HashMap<String, u32>>;
 
 fn main() -> io::Result<()> {
     let mut reader = csv::Reader::from_path("./data/house-votes-84.csv")?;
 
     let headers = reader.headers().expect("CSV headers missing!");
 
-    let mut stats: Stats = headers.into_iter().fold(HashMap::new(), |mut map, header| {
-        map.insert(header.into(), HashMap::new());
-        map
-    });
+    let mut stats: Stats = headers
+        .iter()
+        .map(|header| (header.into(), HashMap::new()))
+        .collect();
 
     let records = reader.deserialize::<Record>();
 
