@@ -35,7 +35,7 @@ impl VoteAttributeStat {
 type Record = HashMap<String, String>;
 type Stats = HashMap<String, HashMap<String, VoteAttributeStat>>;
 
-const ATTEMPTS: usize = 10;
+const EPOCHS: usize = 10;
 
 fn main() -> io::Result<()> {
     let mut reader = csv::Reader::from_path("./data/house-votes-84.csv")?;
@@ -50,11 +50,11 @@ fn main() -> io::Result<()> {
     let mut rng = thread_rng();
     records.shuffle(&mut rng);
 
-    let chunk_size = records.len() / ATTEMPTS;
+    let chunk_size = records.len() / EPOCHS;
 
-    let mut hits = 0;
-    let mut misses = 0;
-    for attempt in 0..ATTEMPTS {
+    let mut average_hit_rate = 0.0;
+
+    for attempt in 0..EPOCHS {
         let mut raw_stats: Stats = headers
             .iter()
             .map(|header| (header.into(), HashMap::new()))
@@ -87,6 +87,9 @@ fn main() -> io::Result<()> {
             }
         }
 
+        let mut local_hits = 0;
+        let mut local_misses = 0;
+
         for mut record in test_chunk {
             let actual_vote = record.remove("Class Name").unwrap();
             let classes = raw_stats.get("Class Name").unwrap();
@@ -109,21 +112,20 @@ fn main() -> io::Result<()> {
             };
 
             if vote_prediciton == actual_vote {
-                hits += 1;
+                local_hits += 1;
             } else {
-                misses += 1;
+                local_misses += 1;
             }
         }
 
-        // println!(
-        //     "{}",
-        //     raw_stats
-        //         .iter()
-        //         .fold(String::new(), |acc, stat| acc + &format!("{:?}\n", stat))
-        // );
+        let probability = local_hits as f32 / (local_hits + local_misses) as f32;
+        average_hit_rate += probability / 10.0;
+
+        println!("Epoch {}: {} {}", attempt, local_hits, local_misses);
+        println!("{}", probability);
     }
 
-    println!("{} {}", hits, misses);
+    println!("Average: {}", average_hit_rate);
 
     Ok(())
 }
