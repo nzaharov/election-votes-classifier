@@ -54,7 +54,7 @@ fn main() -> io::Result<()> {
 
     let mut average_hit_rate = 0.0;
 
-    for attempt in 0..EPOCHS {
+    for epoch in 0..EPOCHS {
         let mut raw_stats: Stats = headers
             .iter()
             .map(|header| (header.into(), HashMap::new()))
@@ -64,7 +64,7 @@ fn main() -> io::Result<()> {
 
         // Populate stats
         for (i, chunk) in records.chunks(chunk_size).enumerate() {
-            if i == attempt {
+            if i == epoch {
                 test_chunk = chunk.to_owned();
                 continue;
             }
@@ -96,13 +96,13 @@ fn main() -> io::Result<()> {
 
             let mut democrat_chance = record.iter().fold(1.0, |acc, (key, value)| {
                 let vote_stat = raw_stats.get(key).unwrap().get(value).unwrap();
-                acc * vote_stat.democrat as f32 / vote_stat.total as f32
+                acc * (vote_stat.democrat as f32 / vote_stat.total as f32 + 0.001)
             });
             democrat_chance *= classes["democrat"].total as f32;
 
             let mut republican_chance = record.iter().fold(1.0, |acc, (key, value)| {
                 let vote_stat = raw_stats.get(key).unwrap().get(value).unwrap();
-                acc * vote_stat.republican as f32 / vote_stat.total as f32
+                acc * (vote_stat.republican as f32 / vote_stat.total as f32 + 0.001)
             });
             republican_chance *= classes["republican"].total as f32;
 
@@ -121,7 +121,7 @@ fn main() -> io::Result<()> {
         let probability = local_hits as f32 / (local_hits + local_misses) as f32;
         average_hit_rate += probability / 10.0;
 
-        println!("Epoch {}: {} {}", attempt, local_hits, local_misses);
+        println!("Epoch {}: {} {}", epoch, local_hits, local_misses);
         println!("{}", probability);
     }
 
